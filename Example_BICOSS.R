@@ -14,9 +14,13 @@ rm(list = ls())
 
 ## All files located at ...
 
-load("~/BICOSS_Example.RData")
+githubURL <- "https://github.com/willja16/BICOSS_Example/raw/main/BICOSS_Example.RData"
+load(url(githubURL))
+rm(githubURL)
 
-source('~/ICOSS/BICOSS.R')
+githubURL <- "https://github.com/willja16/BICOSS_Example/raw/main/BICOSS.R"
+source(url(githubURL))
+rm(githubURL)
 
 ## The parameters of the BICOSS are as follows
 # Y is the continous response vector 
@@ -41,5 +45,3 @@ which(p.adjust(example_output$p_values[[1]]$P_values,method = "BH") < 0.05)
 
 ## Best BICOSS Model
 example_output$modelselection[[1]]$Models
-
-
