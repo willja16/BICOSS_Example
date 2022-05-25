@@ -9,20 +9,17 @@ library(rrBLUP)
 library(caret)
 library(doParallel)
 library(MASS)
+library(limma)
 rm(list = ls())
 
 ## All files located at ...
 
-source('~/ICOSS/BICOSS.R')
+load("~/BICOSS_Example.RData")
 
-load("~/ICOSS/gwas.bayes-applications/SimStudy/SimulationData2.RData")
+source('~/ICOSS/BICOSS.R')
 
 load("/groups/tegge_lab/A_Thaliana/HumanData_RDataFiles/RealDataKinship.rda")
 kinship <- as.matrix(RealDataKinship)
-
-Y <- Y_list[[1]]
-
-# BICOSS <- function(Y,SNPs,number_cores = 1,fixed_effects = FALSE,threshold = 0.05,kinship = FALSE,info = FALSE,maxiterations = 100,runs_til_stop = 10,P3D = TRUE,selfing = FALSE)
 
 ## The parameters of the BICOSS are as follows
 # Y is the continous response vector 
@@ -38,7 +35,7 @@ Y <- Y_list[[1]]
 #  so if one has categorical fixed effects use model.matrix() and upload the design matrix without the intercept
 example_output <- BICOSS(Y = Y, SNPs = SNPs,number_cores = 24,threshold = 0.05,kinship = kinship,maxiterations = 400,runs_til_stop = 40,P3D = FALSE,selfing = TRUE)
 
-### Significant SNPs: 500,1500,2500,3500,4500
+### Significant SNPs: 450,1350,2250,3150,4050,4950,5850,6750,7650,8550
 
 ## SMA - Bonf
 which(p.adjust(example_output$p_values[[1]]$P_values,method = "bonferroni") < 0.05)
@@ -47,5 +44,3 @@ which(p.adjust(example_output$p_values[[1]]$P_values,method = "BH") < 0.05)
 
 ## Best BICOSS Model
 example_output$modelselection[[1]]$Models
-
-
