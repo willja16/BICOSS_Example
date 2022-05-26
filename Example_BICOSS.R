@@ -12,15 +12,24 @@ library(MASS)
 library(limma)
 rm(list = ls())
 
-## All files located at ...
+## All files located at https://github.com/willja16/BICOSS_Example
 
-githubURL <- "https://github.com/willja16/BICOSS_Example/raw/main/BICOSS_Example.RData"
-load(url(githubURL))
+set.seed(1330)
+
+githubURL <- url("https://github.com/willja16/BICOSS_Example/raw/main/BICOSS_Example.RData")
+load(githubURL)
+close(githubURL)
 rm(githubURL)
 
-githubURL <- "https://github.com/willja16/BICOSS_Example/raw/main/BICOSS.R"
-source(url(githubURL))
+githubURL <- url("https://github.com/willja16/BICOSS_Example/raw/main/BICOSS.R")
+source(githubURL)
+close(githubURL)
 rm(githubURL)
+
+## Single Marker Association Test using SMA in GWAS.BAYES
+# Returns a matrix where first column is 0,1 where 1 indicates significance according to threshold and multiple correction procedure
+# Second column is p-values for each SNP
+SMA_output <- SMA(Y = Y, SNPs = SNPs,kinship = kinship,number_cores = 4,threshold = 0.05,P3D = FALSE,selfing = TRUE,controlrate = "bonferroni")
 
 ## The parameters of the BICOSS are as follows
 # Y is the continous response vector 
@@ -34,14 +43,35 @@ rm(githubURL)
 # selfing is a TRUE/FALSE value, where TRUE indicates SNPs from a selfing species and FALSE indicates SNPs from a non-selfing species
 # fixed_effects is a matrix with n rows, each column should be a fixed effect that will be present in every model, currently BICOSS supports numeric columns of fixed effects
 #  so if one has categorical fixed effects use model.matrix() and upload the design matrix without the intercept
-example_output <- BICOSS(Y = Y, SNPs = SNPs,number_cores = 24,threshold = 0.05,kinship = kinship,maxiterations = 400,runs_til_stop = 40,P3D = FALSE,selfing = TRUE)
+BICOSS_output <- BICOSS(Y = Y, SNPs = SNPs,number_cores = 4,threshold = 0.05,kinship = kinship,maxiterations = 400,runs_til_stop = 40,P3D = FALSE,selfing = TRUE)
 
-### Significant SNPs: 450,1350,2250,3150,4050,4950,5850,6750,7650,8550
+True_causal_SNPs <- c(450,1350,2250,3150,4050,4950,5850,6750,7650,8550)
 
 ## SMA - Bonf
-which(p.adjust(example_output$p_values[[1]]$P_values,method = "bonferroni") < 0.05)
+# SMA - Bonf Total number of SNPs
+sum(p.adjust(SMA_output$P_values,method = "bonferroni") < 0.05)
+# SMA - Bonf Recall
+sum(which(p.adjust(SMA_output$P_values,method = "bonferroni") < 0.05) %in% True_causal_SNPs)/length(True_causal_SNPs)
+# SMA - Bonf FDR
+sum(!(which(p.adjust(SMA_output$P_values,method = "bonferroni") < 0.05) %in% True_causal_SNPs))/sum(p.adjust(SMA_output$P_values,method = "bonferroni") < 0.05)
+
 ## SMA - BH
-which(p.adjust(example_output$p_values[[1]]$P_values,method = "BH") < 0.05)
+# SMA - BH Total number of SNPs
+sum(p.adjust(SMA_output$P_values,method = "BH") < 0.05)
+# SMA - BH Recall
+sum(which(p.adjust(SMA_output$P_values,method = "BH") < 0.05) %in% True_causal_SNPs)/length(True_causal_SNPs)
+# SMA - BH FDR
+sum(!(which(p.adjust(SMA_output$P_values,method = "BH") < 0.05) %in% True_causal_SNPs))/sum(p.adjust(SMA_output$P_values,method = "BH") < 0.05)
 
 ## Best BICOSS Model
-example_output$modelselection[[1]]$Models
+# BICOSS Total number of SNPs
+length(BICOSS_output$BICOSS_SNPs)
+# BICOSS Recall
+sum(BICOSS_output$BICOSS_SNPs %in% True_causal_SNPs)/length(True_causal_SNPs)
+# BICOSS FDR
+sum(!(BICOSS_output$BICOSS_SNPs %in% True_causal_SNPs))/length(BICOSS_output$BICOSS_SNPs)
+
+##################
+# This toy example is a compressed verions of the first dataset of the first simulation setting.
+# BICOSS showed strong FDR control vs the SMA methods.
+# The recall was slightly lower compared to SMA-BH but upon further investigation BICOSS identified SNP 3148 instead of SNP 3150. A non-negigible difference in practice.
