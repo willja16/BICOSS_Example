@@ -1,13 +1,3 @@
-library(parallel)
-library(caret)
-library(doParallel)
-library(GA)
-library(memoise)
-library(limma)
-rm(list = ls())
-
-## All files located at https://github.com/willja16/BICOSS_Example
-
 #########################################################################################################
 # We present here a toy example with an analysis of a subset of the first dataset of the first simulation setting in Section 3.1 of 
 # our manuscript.
@@ -18,6 +8,16 @@ rm(list = ls())
 # Results of our extensive simulation study can be found in Section 3.1 of our manuscript. Those results show that, 
 # when compared to SMA-Bonf and SMA-BH, BICOSS has on average better recall and stronger FDR control.
 #########################################################################################################
+
+library(parallel)
+library(caret)
+library(doParallel)
+library(GA)
+library(memoise)
+library(limma)
+rm(list = ls())
+
+## All files located at https://github.com/willja16/BICOSS_Example
 
 set.seed(1330)
 
