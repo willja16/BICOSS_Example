@@ -12,6 +12,18 @@ library(MASS)
 library(limma)
 rm(list = ls())
 
+#########################################################################################################
+# We present here a toy example with an analysis of a subset of the first dataset of the first simulation setting in Section 3.1 of 
+# our manuscript.
+# This example compares the performance of our proposed Bayesian Iterative Conditional Stochastic Search (BICOSS) method
+# versus single marker analysis with Bonferroni multiplicity control (SMA-Bonf) and single marker analysis with Benjamini-Hochberg 
+# multiplicity control (SMA-BH). In this toy example, BICOSS has better recall than the widely used SMA-Bonf method and 
+# BICOSS shows much stronger FDR control vs the SMA methods.
+# Results of our extensive simulation study can be found in Section 3.1 of our manuscript. Those results show that, 
+# when compared to SMA-Bonf and SMA-BH, BICOSS has on average better recall and stronger FDR control.
+#########################################################################################################
+
+
 ## All files located at https://github.com/willja16/BICOSS_Example
 
 set.seed(1330)
