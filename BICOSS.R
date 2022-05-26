@@ -103,12 +103,12 @@ kinship_humans <- function(SNPs,number_cores = 1,MAF){
 
 standardize <- function(SNPs,number_cores = 1,selfing = TRUE,MAF = 0.01){
   requireNamespace("parallel")
-
+  
   if(!is.numeric(number_cores)){
     stop("number_cores is not numeric")
   }
   if(selfing){
-
+    
     std_fun <- function(x,snps){
       ret_1 <- integer(nrow(snps))
       ret_1[which(snps[,x] == names(which.max(table(snps[,x][!is.na(snps[,x])]))))] <- 1
@@ -385,9 +385,9 @@ preselection_nopc <- function(Y,X,number_cores,P3D,frequentist,controlrate,thres
   # These lines need to be run, this essentially cleans the data set
   requireNamespace("parallel")
   ####################
-
+  
   ##################
-
+  
   if(is.logical(kinship)){
     #Simple Linear Regression
     nX <- nrow(X)
@@ -407,7 +407,7 @@ preselection_nopc <- function(Y,X,number_cores,P3D,frequentist,controlrate,thres
       stopCluster(cl)
       SNPdata_list <- lapply(SNPdata_list,function(x){cbind(1,x)})
     }
-
+    
     if(frequentist){
       #Frequentist SLR
       cl <- makeCluster(number_cores)
@@ -439,16 +439,16 @@ preselection_nopc <- function(Y,X,number_cores,P3D,frequentist,controlrate,thres
     #Kinship
     #SLR with kinship component
     nX <- nrow(X)
-
+    
     spec.decomp <- eigen(kinship,symmetric = TRUE)
     Qt <- t(spec.decomp$vectors)
     spec.decomp$values[length(spec.decomp$values)] <- 0
     D <- spec.decomp$values
     rm(spec.decomp)
-
+    
     Y <- Qt%*%Y
     intercept <- Qt%*%matrix(1,nrow = nX,ncol = 1)
-
+    
     if(selfing){
       X <- Qt%*%X
       SNPdata_list <- split(t(X),1:ncol(X))
@@ -472,10 +472,10 @@ preselection_nopc <- function(Y,X,number_cores,P3D,frequentist,controlrate,thres
       clusterExport(cl,c("SNP_data_function_nonselfing"),envir=environment())
       SNPdata_list <- parLapply(cl,SNPdata_list,SNP_data_function_nonselfing)
       stopCluster(cl)
-
+      
       SNPdata_list <- do.call(cbind,SNPdata_list)
       SNPdata_list <- Qt%*%SNPdata_list
-
+      
       SNPdata_list <- split(t(SNPdata_list),rep(1:p,lengths))
       put_together <- function(i,x,leng,int){
         return(cbind(int,matrix(x[[i]],ncol = leng[[i]],byrow = TRUE)))
@@ -483,7 +483,7 @@ preselection_nopc <- function(Y,X,number_cores,P3D,frequentist,controlrate,thres
       names(lengths) <- as.character(1:p)
       SNPdata_list <- lapply(names(SNPdata_list),put_together,x = SNPdata_list,leng = lengths,int = intercept)
     }
-
+    
     #Frequentist RE model
     if(frequentist){
       if(P3D){
@@ -498,12 +498,12 @@ preselection_nopc <- function(Y,X,number_cores,P3D,frequentist,controlrate,thres
         SNPdata_list <- unlist(parLapply(cl,SNPdata_list,RE_p, y = Y, d = D))
         stopCluster(cl)
       }
-
+      
       Pval_function(p_vals = SNPdata_list,thresh = threshold,control = controlrate)
     }else{
       #Bayesian RE model
       BIC.null <- RE_BIC(x = intercept,y = Y,d = D) - 2*log(nullprob)
-
+      
       if(P3D){
         t <- nullmodel_tau(x = intercept,y = Y,d = D)
         cl <- makeCluster(number_cores)
@@ -547,7 +547,7 @@ preselection_pc <- function(Y,X,number_cores,P3D,principal_components,frequentis
     }
   }
   ##################
-
+  
   if(is.logical(kinship)){
     #Simple Linear Regression
     nX <- nrow(X)
@@ -565,10 +565,10 @@ preselection_pc <- function(Y,X,number_cores,P3D,principal_components,frequentis
       clusterExport(cl,c("SNP_data_function_nonselfing"),envir=environment())
       SNPdata_list <- parLapply(cl,SNPdata_list,SNP_data_function_nonselfing)
       stopCluster(cl)
-
+      
       SNPdata_list <- lapply(SNPdata_list,function(x){cbind(1,x,principal_components)})
     }
-
+    
     if(frequentist){
       #Frequentist SLR
       null_dat <- cbind(1,principal_components)
@@ -602,17 +602,17 @@ preselection_pc <- function(Y,X,number_cores,P3D,principal_components,frequentis
     #Kinship
     #SLR with kinship component
     nX <- nrow(X)
-
+    
     spec.decomp <- eigen(kinship,symmetric = TRUE)
     Qt <- t(spec.decomp$vectors)
     spec.decomp$values[length(spec.decomp$values)] <- 0
     D <- spec.decomp$values
     rm(spec.decomp)
-
+    
     Y <- Qt%*%Y
     intercept <- Qt%*%matrix(1,ncol = 1,nrow = nX)
     principal_components <- Qt%*%principal_components
-
+    
     if(selfing){
       X <- Qt%*%X
       SNPdata_list <- split(t(X),1:ncol(X))
@@ -636,7 +636,7 @@ preselection_pc <- function(Y,X,number_cores,P3D,principal_components,frequentis
       clusterExport(cl,c("SNP_data_function_nonselfing"),envir=environment())
       SNPdata_list <- parLapply(cl,SNPdata_list,SNP_data_function_nonselfing)
       stopCluster(cl)
-
+      
       SNPdata_list <- do.call(cbind,SNPdata_list)
       SNPdata_list <- Qt%*%SNPdata_list
       SNPdata_list <- split(t(SNPdata_list),rep(1:p,lengths))
@@ -689,15 +689,15 @@ preselection_pc <- function(Y,X,number_cores,P3D,principal_components,frequentis
       colnames(tf_mat) <- c("Significant","ApprPosteriorProbs")
       return(tf_mat)
     }
-
+    
   }
-
+  
 }
 
 SMA <- function(Y,SNPs,number_cores = 1,P3D = TRUE,fixed_effects = FALSE,frequentist = TRUE,controlrate = "bonferroni",threshold = 0.05,nullprob = NULL,alterprob = NULL,kinship = FALSE,info = FALSE,selfing){
-
+  
   principal_components <- fixed_effects
-
+  
   if(sum(apply(SNPs,2,is.numeric)) != ncol(SNPs)){
     stop("Not every column of SNPs is numeric")
   }
@@ -736,7 +736,7 @@ SMA <- function(Y,SNPs,number_cores = 1,P3D = TRUE,fixed_effects = FALSE,frequen
       stop("nullprob and alterprob need to sum to 1")
     }
   }
-
+  
   if(is.logical(info)){
     if(is.logical(principal_components)){
       preselection_nopc(Y = Y,X = SNPs,number_cores = number_cores,P3D = P3D,frequentist = frequentist,controlrate = controlrate,threshold = threshold,nullprob = nullprob,alterprob = alterprob,kinship = kinship,selfing = selfing)
@@ -812,30 +812,30 @@ ga_modelselection_nopc <- function(Y,X,significant,number_cores,maxiterations,ru
   requireNamespace("doParallel")
   requireNamespace("Matrix")
   requireNamespace("memoise")
-
+  
   y1 <- paste0("SNP",1:ncol(X))[significant]
-
+  
   #SLR w Kinship
   nX <- nrow(X)
   X <- X[,significant]
-
+  
   spec.decomp <- eigen(kinship,symmetric = TRUE)
   Q <- spec.decomp$vectors
   Qt <- t(Q)
   spec.decomp$values[length(spec.decomp$values)] <- 0
   D <- spec.decomp$values
   rm(spec.decomp)
-
+  
   intercept <- Qt%*%matrix(1,nrow = nX,ncol = 1)
   Y <- Qt%*%Y
   rm(Q)
-
+  
   if(selfing){
     X <- Qt%*%X
     fitness_sub <- function(string) {
       SNPdata_list_sub <- cbind(intercept,X[,string == 1])
       P <- ncol(SNPdata_list_sub)
-
+      
       if(Matrix::rankMatrix(SNPdata_list_sub)[1] < ncol(SNPdata_list_sub)){
         dropped_cols <- findLinearCombos(SNPdata_list_sub)$remove
         SNPdata_list_sub <- SNPdata_list_sub[,-dropped_cols]
@@ -851,7 +851,7 @@ ga_modelselection_nopc <- function(Y,X,significant,number_cores,maxiterations,ru
         }
       }
       P <- ncol(SNPdata_list_sub)
-
+      
       if(Matrix::rankMatrix(SNPdata_list_sub)[1] < ncol(SNPdata_list_sub)){
         dropped_cols <- findLinearCombos(SNPdata_list_sub)$remove
         SNPdata_list_sub <- SNPdata_list_sub[,-dropped_cols]
@@ -859,7 +859,7 @@ ga_modelselection_nopc <- function(Y,X,significant,number_cores,maxiterations,ru
       return((-1)*(RE_BIC_modelselection(Qt%*%SNPdata_list_sub,Y,pstar = P,d = D) - 2*(P*log(1 - pi0) + (ncol(X) - P)*log(pi0))))
     }
   }
-
+  
   suggestedsol <- rbind(0,diag(length(significant)))
   if(length(significant) > 99){
     if(selfing){
@@ -882,7 +882,7 @@ ga_modelselection_nopc <- function(Y,X,significant,number_cores,maxiterations,ru
       clusterExport(cl,c("SNP_data_function_nonselfing"),envir=environment())
       SNPdata_list <- parLapply(cl,SNPdata_list,SNP_data_function_nonselfing)
       stopCluster(cl)
-
+      
       SNPdata_list <- do.call(cbind,SNPdata_list)
       SNPdata_list <- Qt%*%SNPdata_list
       SNPdata_list <- split(t(SNPdata_list),rep(1:p,lengths))
@@ -899,7 +899,7 @@ ga_modelselection_nopc <- function(Y,X,significant,number_cores,maxiterations,ru
     suggestedsol <- as.matrix(suggestedsol[order(SNPdata_list)[1:99],])
   }
   fitness_sub <- memoise::memoise(fitness_sub)
-  ans <- GA::ga("binary", fitness = fitness_sub, nBits = ncol(X),names = y1,maxiter = maxiterations,popSize = 100,elitism = min(c(10,2^ncol(X))),parallel = 1,run = runs_til_stop,suggestions = suggestedsol)
+  ans <- GA::ga("binary", fitness = fitness_sub, nBits = ncol(X),names = y1,maxiter = maxiterations,popSize = 100,elitism = min(c(10,2^ncol(X))),parallel = 1,run = runs_til_stop,suggestions = suggestedsol,monitor = FALSE)
   memoise::forget(fitness_sub)
   dat <- cbind(ans@population,(-1)*ans@fitness)
   dat <- unique(dat)
@@ -919,18 +919,18 @@ ga_modelselection_nopc <- function(Y,X,significant,number_cores,maxiterations,ru
   colnames(inclusion_prob) <- c("SNPs","InclusionProb")
   inclusion_prob$InclusionProb <- as.numeric(inclusion_prob$InclusionProb)
   rownames(inclusion_prob) <- NULL
-
+  
   return(list(Models = vec,Solution = ans@solution,InclusionProb = inclusion_prob))
 }
 
 ga_modelselection_pc <- function(Y,X,significant,number_cores,principal_components,maxiterations,runs_til_stop,kinship = FALSE,selfing,pi0){
-
+  
   requireNamespace("GA")
   requireNamespace("parallel")
   requireNamespace("doParallel")
   requireNamespace("Matrix")
   requireNamespace("memoise")
-
+  
   if(is.null(dim(principal_components))){
     principal_components[is.na(principal_components)] <- mean(principal_components,na.rm = TRUE)
   }else{
@@ -938,30 +938,30 @@ ga_modelselection_pc <- function(Y,X,significant,number_cores,principal_componen
       principal_components[is.na(principal_components[,i]),i] <- mean(principal_components[,i],na.rm = TRUE)
     }
   }
-
+  
   y1 <- paste0("SNP",1:length(ncol(X)))[significant]
-
+  
   #SLR w Kinship
   nX <- nrow(X)
   X <- X[,significant]
-
+  
   spec.decomp <- eigen(kinship,symmetric = TRUE)
   Qt <- t(spec.decomp$vectors)
   spec.decomp$values[length(spec.decomp$values)] <- 0
   D <- spec.decomp$values
   rm(spec.decomp)
-
+  
   intercept <- Qt%*%matrix(1,nrow = nX,ncol = 1)
   principal_components <- Qt%*%principal_components
   Y <- Qt%*%Y
   rm(Q)
-
+  
   if(selfing){
     X <- Qt%*%X
     fitness_sub <- function(string) {
       SNPdata_list_sub <- cbind(intercept,X[,string == 1],principal_components)
       P <- ncol(SNPdata_list_sub)
-
+      
       if(Matrix::rankMatrix(SNPdata_list_sub)[1] < ncol(SNPdata_list_sub)){
         dropped_cols <- findLinearCombos(SNPdata_list_sub)$remove
         SNPdata_list_sub <- SNPdata_list_sub[,-dropped_cols]
@@ -978,7 +978,7 @@ ga_modelselection_pc <- function(Y,X,significant,number_cores,principal_componen
       }
       SNPdata_list_sub <- cbind(Qt%*%SNPdata_list_sub,principal_components)
       P <- ncol(SNPdata_list_sub)
-
+      
       if(Matrix::rankMatrix(SNPdata_list_sub)[1] < ncol(SNPdata_list_sub)){
         dropped_cols <- findLinearCombos(SNPdata_list_sub)$remove
         SNPdata_list_sub <- SNPdata_list_sub[,-dropped_cols]
@@ -986,7 +986,7 @@ ga_modelselection_pc <- function(Y,X,significant,number_cores,principal_componen
       return((-1)*(RE_BIC_modelselection(SNPdata_list_sub,Y,pstar = P,d = D) - 2*(P*log(1 - pi0) + (ncol(X) - P)*log(pi0))))
     }
   }
-
+  
   suggestedsol <- rbind(0,diag(length(significant)))
   if(length(significant) > 99){
     if(selfing){
@@ -1009,7 +1009,7 @@ ga_modelselection_pc <- function(Y,X,significant,number_cores,principal_componen
       clusterExport(cl,c("SNP_data_function_nonselfing"),envir=environment())
       SNPdata_list <- parLapply(cl,SNPdata_list,SNP_data_function_nonselfing)
       stopCluster(cl)
-
+      
       SNPdata_list <- do.call(cbind,SNPdata_list)
       SNPdata_list <- Qt%*%SNPdata_list
       SNPdata_list <- split(t(SNPdata_list),rep(1:p,lengths))
@@ -1026,7 +1026,7 @@ ga_modelselection_pc <- function(Y,X,significant,number_cores,principal_componen
     suggestedsol <- as.matrix(suggestedsol[order(SNPdata_list)[1:99],])
   }
   fitness_sub <- memoise::memoise(fitness_sub)
-  ans <- GA::ga("binary", fitness = fitness_sub, nBits = ncol(X),names = y1,maxiter = maxiterations,popSize = 100,elitism = min(c(10,2^ncol(X))),parallel = number_cores,run = runs_til_stop,suggestions = suggestedsol)
+  ans <- GA::ga("binary", fitness = fitness_sub, nBits = ncol(X),names = y1,maxiter = maxiterations,popSize = 100,elitism = min(c(10,2^ncol(X))),parallel = number_cores,run = runs_til_stop,suggestions = suggestedsol,monitor = FALSE)
   memoise::forget(fitness_sub)
   dat <- cbind(ans@population,(-1)*ans@fitness)
   dat <- unique(dat)
@@ -1046,12 +1046,12 @@ ga_modelselection_pc <- function(Y,X,significant,number_cores,principal_componen
   colnames(inclusion_prob) <- c("SNPs","InclusionProb")
   inclusion_prob$InclusionProb <- as.numeric(inclusion_prob$InclusionProb)
   rownames(inclusion_prob) <- NULL
-
+  
   return(list(Models = vec,Solution = ans@solution,InclusionProb = inclusion_prob))
 }
 
 postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = FALSE,maxiterations = 100,runs_til_stop = 10,kinship,info = FALSE,selfing,pi0){
-
+  
   if(sum(apply(SNPs,2,is.numeric)) != ncol(SNPs)){
     stop("Not every column of SNPs is numeric")
   }
@@ -1070,7 +1070,7 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
   if(!is.numeric(runs_til_stop)){
     stop("runs_til_stop needs to be numeric")
   }
-
+  
   if(length(significant) > 11){
     if(is.logical(principal_components)){
       results <- ga_modelselection_nopc(Y = Y,X = SNPs,significant = significant,number_cores = number_cores,maxiterations = maxiterations,runs_til_stop = runs_til_stop,kinship = kinship,selfing = selfing,pi0 = pi0)
@@ -1093,31 +1093,31 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
       requireNamespace("doParallel")
       requireNamespace("Matrix")
       requireNamespace("memoise")
-
+      
       X <- SNPs
       y1 <- paste0("SNP",1:ncol(X))[significant]
-
+      
       #SLR w Kinship
-
+      
       nX <- nrow(X)
       X <- matrix(X[,significant],ncol = length(significant))
-
+      
       spec.decomp <- eigen(kinship,symmetric = TRUE)
       Qt <- t(spec.decomp$vectors)
       spec.decomp$values[length(spec.decomp$values)] <- 0
       D <- spec.decomp$values
       rm(spec.decomp)
-
+      
       intercept <- Qt%*%matrix(1,nrow = nX,ncol = 1)
       Y <- Qt%*%Y
       n <- ncol(X)
-
+      
       if(selfing){
         X <- Qt%*%X
         fitness_sub <- function(string) {
           SNPdata_list_sub <- cbind(intercept,X[,string == 1])
           P <- ncol(SNPdata_list_sub)
-
+          
           if(Matrix::rankMatrix(SNPdata_list_sub)[1] < ncol(SNPdata_list_sub)){
             dropped_cols <- findLinearCombos(SNPdata_list_sub)$remove
             SNPdata_list_sub <- SNPdata_list_sub[,-dropped_cols]
@@ -1133,7 +1133,7 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
             }
           }
           P <- ncol(SNPdata_list_sub)
-
+          
           if(Matrix::rankMatrix(SNPdata_list_sub)[1] < ncol(SNPdata_list_sub)){
             dropped_cols <- findLinearCombos(SNPdata_list_sub)$remove
             SNPdata_list_sub <- SNPdata_list_sub[,-dropped_cols]
@@ -1141,27 +1141,27 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
           return((-1)*(RE_BIC_modelselection(Qt%*%SNPdata_list_sub,Y,pstar = P,d = D) - 2*(P*log(1 - pi0) + (ncol(X) - P)*log(pi0))))
         }
       }
-
+      
       l <- rep(list(0:1), n)
       l <- expand.grid(l)
       colnames(l) <- y1
       ol <- as.matrix(l)
       l <- split(l,1:nrow(l))
-
+      
       cl <- makeCluster(number_cores)
       clusterExport(cl,c("l","fitness_sub","X","nX","D","Qt","pi0","RE_BIC_modelselection","log_profile_likelihood_MLE","log_profile_likelihood_REML","SNP_data_function_nonselfing","rankMatrix","findLinearCombos","Y"),envir=environment())
       l <- unlist(parLapply(cl,l,fitness_sub))
       stopCluster(cl)
-
+      
       dat <- cbind(ol,l)
       dat[,ncol(dat)] <- (-1)*dat[,ncol(dat)]
       dat <- cbind(dat,(exp(-.5 * (dat[,ncol(dat)] - max(dat[,ncol(dat)]))))/(sum(exp(-.5 * (dat[,ncol(dat)] - max(dat[,ncol(dat)]))))))
-
+      
       dat <- dat[order(dat[,ncol(dat)],decreasing = FALSE),]
       anstf <- cumsum(dat[,ncol(dat)]) > .05
       ans <- matrix(dat[anstf,1:(ncol(dat) - 2)],ncol = (ncol(dat) - 2),nrow = sum(anstf))
       colnames(ans) <- y1
-
+      
       vec1 <- matrix(0,nrow = nrow(dat),ncol = nrow(ans))
       for(i in 1:nrow(dat)){
         for(j in 1:nrow(ans)){
@@ -1177,7 +1177,7 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
       colnames(inclusion_prob) <- c("SNPs","InclusionProb")
       inclusion_prob$InclusionProb <- as.numeric(inclusion_prob$InclusionProb)
       rownames(inclusion_prob) <- NULL
-
+      
       results <- list(Models = vec,Solution = ans,InclusionProb = inclusion_prob)
       if(is.logical(info)){
         return(results)
@@ -1188,14 +1188,14 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
         results$InclusionProb$SNPs <- info
         return(results)
       }
-
+      
     }else{
       requireNamespace("GA")
       requireNamespace("parallel")
       requireNamespace("doParallel")
       requireNamespace("Matrix")
       requireNamespace("memoise")
-
+      
       if(is.null(dim(principal_components))){
         principal_components[is.na(principal_components)] <- mean(principal_components,na.rm = TRUE)
       }else{
@@ -1203,31 +1203,31 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
           principal_components[is.na(principal_components[,i]),i] <- mean(principal_components[,i],na.rm = TRUE)
         }
       }
-
+      
       X <- SNPs
       y1 <- paste0("SNP",1:ncol(X))[significant]
-
+      
       #SLR w Kinship
       nX <- nrow(X)
       X <- matrix(X[,significant],ncol = length(significant))
-
+      
       spec.decomp <- eigen(kinship,symmetric = TRUE)
       Qt <- t(spec.decomp$vectors)
       spec.decomp$values[length(spec.decomp$values)] <- 0
       D <- spec.decomp$values
       rm(spec.decomp)
-
+      
       intercept <- Qt%*%matrix(1,nrow = nX,ncol = 1)
       principal_components <- Qt%*%principal_components
       Y <- Qt%*%Y
       n <- ncol(X)
-
+      
       if(selfing){
         X <- Qt%*%X
         fitness_sub <- function(string) {
           SNPdata_list_sub <- cbind(intercept,X[,string == 1],principal_components)
           P <- ncol(SNPdata_list_sub)
-
+          
           if(Matrix::rankMatrix(SNPdata_list_sub)[1] < ncol(SNPdata_list_sub)){
             dropped_cols <- findLinearCombos(SNPdata_list_sub)$remove
             SNPdata_list_sub <- SNPdata_list_sub[,-dropped_cols]
@@ -1244,7 +1244,7 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
           }
           SNPdata_list_sub <- cbind(Qt%*%SNPdata_list_sub,principal_components)
           P <- ncol(SNPdata_list_sub)
-
+          
           if(Matrix::rankMatrix(SNPdata_list_sub)[1] < ncol(SNPdata_list_sub)){
             dropped_cols <- findLinearCombos(SNPdata_list_sub)$remove
             SNPdata_list_sub <- SNPdata_list_sub[,-dropped_cols]
@@ -1252,27 +1252,27 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
           return((-1)*(RE_BIC_modelselection(SNPdata_list_sub,Y,pstar = P,d = D) - 2*(P*log(1 - pi0) + (ncol(X) - P)*log(pi0))))
         }
       }
-
+      
       l <- rep(list(0:1), n)
       l <- expand.grid(l)
       colnames(l) <- y1
       ol <- as.matrix(l)
       l <- split(l,1:nrow(l))
-
+      
       cl <- makeCluster(number_cores)
       clusterExport(cl,c("l","fitness_sub","X","nX","pi0","D","Qt","RE_BIC_modelselection","SNP_data_function_nonselfing","log_profile_likelihood_MLE","log_profile_likelihood_REML","rankMatrix","findLinearCombos","Y","principal_components"),envir=environment())
       l <- unlist(parLapply(cl,l,fitness_sub))
       stopCluster(cl)
-
+      
       dat <- cbind(ol,l)
       dat[,ncol(dat)] <- (-1)*dat[,ncol(dat)]
       dat <- cbind(dat,(exp(-.5 * (dat[,ncol(dat)] - max(dat[,ncol(dat)]))))/(sum(exp(-.5 * (dat[,ncol(dat)] - max(dat[,ncol(dat)]))))))
-
+      
       dat <- dat[order(dat[,ncol(dat)],decreasing = FALSE),]
       anstf <- cumsum(dat[,ncol(dat)]) > .05
       ans <- matrix(dat[anstf,1:(ncol(dat) - 2)],ncol = (ncol(dat) - 2),nrow = sum(anstf))
       colnames(ans) <- y1
-
+      
       vec1 <- matrix(0,nrow = nrow(dat),ncol = nrow(ans))
       for(i in 1:nrow(dat)){
         for(j in 1:nrow(ans)){
@@ -1288,7 +1288,7 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
       colnames(inclusion_prob) <- c("SNPs","InclusionProb")
       inclusion_prob$InclusionProb <- as.numeric(inclusion_prob$InclusionProb)
       rownames(inclusion_prob) <- NULL
-
+      
       results <- list(Models = vec,Solution = ans,InclusionProb = inclusion_prob)
       if(is.logical(info)){
         return(results)
@@ -1340,11 +1340,11 @@ postGWAS <- function(Y,SNPs,significant,number_cores = 1,principal_components = 
 preselection_nopc_2 <- function(Y,X,fixed,number_cores,frequentist,controlrate,threshold,nullprob,alterprob,kinship = FALSE,P3D,selfing){
   requireNamespace("parallel")
   ####################
-
+  
   dropped_cols <- NULL
-
+  
   fixed_o <- fixed
-
+  
   if(!selfing){
     X_fixed <- matrix(1,nrow = nrow(X),ncol = 1)
     for(i in 1:length(fixed)){
@@ -1354,28 +1354,28 @@ preselection_nopc_2 <- function(Y,X,fixed,number_cores,frequentist,controlrate,t
   }else{
     X_fixed <- matrix(X[,fixed],ncol = length(fixed))
   }
-
+  
   if(Matrix::rankMatrix(X_fixed)[1] < ncol(X_fixed)){
     dropped_cols <- findLinearCombos(X_fixed)$remove
     X_fixed <- matrix(X_fixed[,-dropped_cols],ncol = Matrix::rankMatrix(X_fixed)[1])
     fixed <- fixed[-dropped_cols]
   }
-
+  
   ##################
   #Kinship
   #SLR with kinship component
   nX <- nrow(X)
-
+  
   spec.decomp <- eigen(kinship,symmetric = TRUE)
   Qt <- t(spec.decomp$vectors)
   spec.decomp$values[length(spec.decomp$values)] <- 0
   D <- spec.decomp$values
   rm(spec.decomp)
-
+  
   intercept <- Qt%*%matrix(1,nrow = nX,ncol = 1)
   Y <- Qt%*%Y
   X_fixed <- Qt%*%X_fixed
-
+  
   if(selfing){
     X <- Qt%*%X
     SNPdata_list <- split(t(X),1:ncol(X))
@@ -1399,10 +1399,10 @@ preselection_nopc_2 <- function(Y,X,fixed,number_cores,frequentist,controlrate,t
     clusterExport(cl,c("SNP_data_function_nonselfing"),envir=environment())
     SNPdata_list <- parLapply(cl,SNPdata_list,SNP_data_function_nonselfing)
     stopCluster(cl)
-
+    
     SNPdata_list <- do.call(cbind,SNPdata_list)
     SNPdata_list <- Qt%*%SNPdata_list
-
+    
     SNPdata_list <- split(t(SNPdata_list),rep(1:p,lengths))
     put_together <- function(i,x,leng,int,X_fix){
       return(cbind(int,matrix(x[[i]],ncol = leng[[i]],byrow = TRUE),X_fix))
@@ -1410,13 +1410,13 @@ preselection_nopc_2 <- function(Y,X,fixed,number_cores,frequentist,controlrate,t
     names(lengths) <- as.character(1:p)
     SNPdata_list <- lapply(names(SNPdata_list),put_together,x = SNPdata_list,leng = lengths,int = intercept,X_fix = X_fixed)
   }
-
+  
   SNPdata_list[fixed] <- replicate(n = length(fixed), expr = {cbind(intercept,X_fixed)},simplify = F)
-
+  
   l1 <- unlist(lapply(SNPdata_list, svd1))
   rank_defient <- l1[1:length(l1) %% 2 == 0]
   condition_num <- l1[1:length(l1) %% 2 == 1]
-
+  
   if(selfing){
     rank_defient <- which(rank_defient > 0)
     condition_num <- which(condition_num > 1e6)
@@ -1446,7 +1446,7 @@ preselection_nopc_2 <- function(Y,X,fixed,number_cores,frequentist,controlrate,t
     }
     exclude <- c(fixed,rank_defient[lengths[rank_defient] < 2],condition_num[lengths[condition_num] < 2])
   }
-
+  
   #Frequentist RE model
   if(frequentist){
     if(P3D){
@@ -1465,7 +1465,7 @@ preselection_nopc_2 <- function(Y,X,fixed,number_cores,frequentist,controlrate,t
       SNPdata_list[exclude] <- 1
       SNPdata_list <- unlist(SNPdata_list)
     }
-
+    
     tf_mat <- Pval_function(p_vals = SNPdata_list[(1:length(SNPdata_list))[!(1:length(SNPdata_list) %in% exclude)]],thresh = threshold,control = controlrate)
     rownames(tf_mat) <- (1:length(SNPdata_list))[!(1:length(SNPdata_list) %in% exclude)]
     Significant <- tf_mat[tf_mat[,1] == 1,]
@@ -1473,7 +1473,7 @@ preselection_nopc_2 <- function(Y,X,fixed,number_cores,frequentist,controlrate,t
   }else{
     #Bayesian RE model
     BIC.null <- RE_BIC(x = cbind(intercept,X_fixed),y = Y,d = D) - 2*log(nullprob)
-
+    
     if(P3D){
       t <- nullmodel_tau(x = cbind(intercept,X_fixed),y = Y,d = D)
       cl <- makeCluster(1)
@@ -1537,11 +1537,11 @@ preselection_pc_2 <- function(Y,X,fixed,number_cores,principal_components,freque
   # These lines need to be run, this essentially cleans the data set
   requireNamespace("parallel")
   ####################
-
+  
   dropped_cols <- NULL
-
+  
   fixed_o <- fixed
-
+  
   if(!selfing){
     X_fixed <- matrix(1,nrow = nrow(X),ncol = 1)
     for(i in 1:length(fixed)){
@@ -1551,13 +1551,13 @@ preselection_pc_2 <- function(Y,X,fixed,number_cores,principal_components,freque
   }else{
     X_fixed <- matrix(X[,fixed],ncol = length(fixed))
   }
-
+  
   if(Matrix::rankMatrix(X_fixed)[1] < ncol(X_fixed)){
     dropped_cols <- findLinearCombos(X_fixed)$remove
     X_fixed <- matrix(X_fixed[,-dropped_cols],ncol = Matrix::rankMatrix(X_fixed)[1])
     fixed <- fixed[-dropped_cols]
   }
-
+  
   if(is.null(dim(principal_components))){
     principal_components[is.na(principal_components)] <- mean(principal_components,na.rm = TRUE)
   }else{
@@ -1565,23 +1565,23 @@ preselection_pc_2 <- function(Y,X,fixed,number_cores,principal_components,freque
       principal_components[is.na(principal_components[,i]),i] <- mean(principal_components[,i],na.rm = TRUE)
     }
   }
-
+  
   ##################
   #Kinship
   #SLR with kinship component
   nX <- nrow(X)
-
+  
   spec.decomp <- eigen(kinship,symmetric = TRUE)
   Qt <- t(spec.decomp$vectors)
   spec.decomp$values[length(spec.decomp$values)] <- 0
   D <- spec.decomp$values
   rm(spec.decomp)
-
+  
   intercept <- Qt%*%matrix(1,nrow = nX,ncol = 1)
   X_fixed <- Qt%*%X_fixed
   principal_components <- Qt%*%principal_components
   Y <- Qt%*%Y
-
+  
   if(selfing){
     X <- Qt%*%X
     SNPdata_list <- split(t(X),1:ncol(X))
@@ -1605,10 +1605,10 @@ preselection_pc_2 <- function(Y,X,fixed,number_cores,principal_components,freque
     clusterExport(cl,c("SNP_data_function_nonselfing"),envir=environment())
     SNPdata_list <- parLapply(cl,SNPdata_list,SNP_data_function_nonselfing)
     stopCluster(cl)
-
+    
     SNPdata_list <- do.call(cbind,SNPdata_list)
     SNPdata_list <- Qt%*%SNPdata_list
-
+    
     SNPdata_list <- split(t(SNPdata_list),rep(1:p,lengths))
     put_together <- function(i,x,leng,int,X_fix){
       return(cbind(int,matrix(x[[i]],ncol = leng[[i]],byrow = TRUE),X_fix))
@@ -1617,11 +1617,11 @@ preselection_pc_2 <- function(Y,X,fixed,number_cores,principal_components,freque
     SNPdata_list <- lapply(names(SNPdata_list),put_together,x = SNPdata_list,leng = lengths,int = intercept,X_fix = cbind(X_fixed,principal_components))
   }
   SNPdata_list[fixed] <- replicate(n = length(fixed), expr = {cbind(intercept,X_fixed,principal_components)},simplify = F)
-
+  
   l1 <- unlist(lapply(SNPdata_list, svd1))
   rank_defient <- l1[1:length(l1) %% 2 == 0]
   condition_num <- l1[1:length(l1) %% 2 == 1]
-
+  
   if(selfing){
     rank_defient <- which(rank_defient > 0)
     condition_num <- which(condition_num > 1e6)
@@ -1651,7 +1651,7 @@ preselection_pc_2 <- function(Y,X,fixed,number_cores,principal_components,freque
     }
     exclude <- c(fixed,rank_defient[lengths[rank_defient] < 2],condition_num[lengths[condition_num] < 2])
   }
-
+  
   #Frequentist RE model
   if(frequentist){
     if(P3D){
@@ -1670,7 +1670,7 @@ preselection_pc_2 <- function(Y,X,fixed,number_cores,principal_components,freque
       SNPdata_list[exclude] <- 1
       SNPdata_list <- unlist(SNPdata_list)
     }
-
+    
     tf_mat <- Pval_function(p_vals = SNPdata_list[(1:length(SNPdata_list))[!(1:length(SNPdata_list) %in% exclude)]],thresh = threshold,control = controlrate)
     rownames(tf_mat) <- (1:length(SNPdata_list))[!(1:length(SNPdata_list) %in% exclude)]
     Significant <- tf_mat[tf_mat[,1] == 1,]
@@ -1696,7 +1696,7 @@ preselection_pc_2 <- function(Y,X,fixed,number_cores,principal_components,freque
       SNPdata_list <- unlist(SNPdata_list)
       SNPdata_list <- SNPdata_list - 2*1*log(1 - nullprob)
     }
-
+    
     p_vec <- (exp(-.5 * (SNPdata_list - apply(cbind(SNPdata_list,as.numeric(BIC.null)),1,max))))/(exp(-.5 * (SNPdata_list - apply(cbind(SNPdata_list,as.numeric(BIC.null)),1,max))) + exp(-.5 * (as.numeric(BIC.null) - apply(cbind(SNPdata_list,as.numeric(BIC.null)),1,max))))
     order_vec <- (1:length(p_vec))[order(p_vec,decreasing = TRUE)]
     p_vec <- p_vec[order(p_vec,decreasing = TRUE)]
@@ -1742,7 +1742,7 @@ preselection_pc_2 <- function(Y,X,fixed,number_cores,principal_components,freque
 
 
 preselection2 <- function(Y,SNPs,fixed,number_cores = 1,principal_components = FALSE,frequentist = TRUE,controlrate = "bonferroni",threshold = 0.05,nullprob = NULL,alterprob = NULL,kinship = FALSE,info = FALSE,P3D,selfing){
-
+  
   if(sum(apply(SNPs,2,is.numeric)) != ncol(SNPs)){
     stop("Not every column of SNPs is numeric")
   }
@@ -1811,7 +1811,7 @@ preselection2 <- function(Y,SNPs,fixed,number_cores = 1,principal_components = F
       stop("nullprob and alterprob need to sum to 1")
     }
   }
-
+  
   if(is.logical(principal_components)){
     preselection_nopc_2(Y = Y,X = SNPs,fixed = fixed,number_cores = number_cores,frequentist = frequentist,controlrate = controlrate,threshold = threshold,nullprob = nullprob,alterprob = alterprob,kinship = kinship,P3D = P3D,selfing = selfing)
   }else{
@@ -1872,14 +1872,14 @@ BICOSS <- function(Y,SNPs,number_cores = 1,fixed_effects = FALSE,threshold = 0.0
   if(!is.numeric(runs_til_stop)){
     stop("runs_til_stop needs to be numeric")
   }
-
+  
   prescreen1_freq <- SMA(Y,SNPs,number_cores = number_cores,fixed_effects = principal_components,frequentist = TRUE,controlrate = "bonferroni",threshold = threshold,kinship = kinship,info = FALSE,P3D = P3D,selfing = selfing)
   true_nullprop <- convest(prescreen1_freq$P_values)
   if(true_nullprop == 1){
     true_nullprop <- 1 - 100/(ncol(SNPs))
   }
   prescreen1 <- SMA(Y,SNPs,number_cores = number_cores,fixed_effects = principal_components,nullprob = true_nullprop,alterprob = 1 - true_nullprop,frequentist = FALSE,threshold = threshold,kinship = kinship,info = info,P3D = P3D,selfing = selfing)
-
+  
   if(sum(prescreen1$Significant == 1) == 0){
     modelselection <- "No significant in prescreen1"
     prescreen_2nd <- "No significant in prescreen1"
@@ -1941,15 +1941,15 @@ BICOSS <- function(Y,SNPs,number_cores = 1,fixed_effects = FALSE,threshold = 0.0
     modelselection <- modelselection_tmp
     prescreen_2nd <- prescreen2_tmp
   }
-  return(list(prescreen1 = prescreen1,modelselection = modelselection,prescreen2 = prescreen_2nd,p_values = prescreen2_freq))
-
+  return(list(BICOSS_SNPs = fixed))
+  
 }
 
 resids_diag <- function(Y,SNPs,significant,kinship = FALSE,fixed_effects = FALSE,plot_it = TRUE,selfing){
   requireNamespace("Matrix")
-
+  
   principal_components <- fixed_effects
-
+  
   if(sum(apply(SNPs,2,is.numeric)) != ncol(SNPs)){
     stop("Not every column of SNPs is numeric")
   }
@@ -1986,9 +1986,9 @@ resids_diag <- function(Y,SNPs,significant,kinship = FALSE,fixed_effects = FALSE
   if(!is.logical(plot_it)){
     stop("plot_it is not a logical value")
   }
-
+  
   X <- SNPs
-
+  
   RE_BETA <- function(x,y,d){
     n <- nrow(x)
     p <- ncol(x)
@@ -1998,12 +1998,12 @@ resids_diag <- function(Y,SNPs,significant,kinship = FALSE,fixed_effects = FALSE
     beta2 <- xtx%*%t(x)%*%(estar*y)
     return(list(beta2,z))
   }
-
+  
   SLR_BETA <- function(x,y){
     beta.mle <- solve(t(x)%*%x)%*%t(x)%*%y
     return(beta.mle)
   }
-
+  
   if(!selfing){
     X_fixed <- matrix(1,nrow = nrow(X),ncol = 1)
     for(i in 1:length(significant)){
@@ -2013,26 +2013,26 @@ resids_diag <- function(Y,SNPs,significant,kinship = FALSE,fixed_effects = FALSE
   }else{
     X_fixed <- matrix(X[,significant],ncol = length(significant))
   }
-
+  
   if(Matrix::rankMatrix(X_fixed)[1] < ncol(X_fixed)){
     dropped_cols <- findLinearCombos(X_fixed)$remove
     X_fixed <- matrix(X_fixed[,-dropped_cols],ncol = Matrix::rankMatrix(X_fixed)[1])
     significant <- significant[-dropped_cols]
   }
-
+  
   Good <- X_fixed
   oG <- Good
-
+  
   nX <- nrow(Good)
-
+  
   oY <- Y
-
+  
   if(is.logical(kinship)){
     if(is.logical(principal_components)){
       #No principal or kinship
       intercept <- matrix(1,nrow = nX,ncol = 1)
       Good <- cbind(intercept,Good)
-
+      
       if(Matrix::rankMatrix(Good)[1] < ncol(Good)){
         dropped_cols <- findLinearCombos(Good)$remove
         Good <- Good[,-dropped_cols]
@@ -2040,7 +2040,7 @@ resids_diag <- function(Y,SNPs,significant,kinship = FALSE,fixed_effects = FALSE
       beta.good <- SLR_BETA(x = Good, y = Y)
       yhat <- Good %*% beta.good
       resids <- Y - yhat
-
+      
       if(plot_it == TRUE){
         hist(resids,main = "Histogram of Residuals",xlab = "Residuals",breaks = 20)
         return(shapiro.test(resids))
@@ -2051,7 +2051,7 @@ resids_diag <- function(Y,SNPs,significant,kinship = FALSE,fixed_effects = FALSE
       #Principal and no kinship
       intercept <- matrix(1,nrow = nX,ncol = 1)
       Good <- cbind(intercept,Good,principal_components)
-
+      
       if(Matrix::rankMatrix(Good)[1] < ncol(Good)){
         dropped_cols <- findLinearCombos(Good)$remove
         Good <- Good[,-dropped_cols]
@@ -2059,7 +2059,7 @@ resids_diag <- function(Y,SNPs,significant,kinship = FALSE,fixed_effects = FALSE
       beta.good <- SLR_BETA(x = Good, y = Y)
       yhat <- Good %*% beta.good
       resids <- Y - yhat
-
+      
       if(plot_it == TRUE){
         hist(resids,main = "Histogram of Residuals",xlab = "Residuals",breaks = 20)
         return(shapiro.test(resids))
@@ -2076,21 +2076,21 @@ resids_diag <- function(Y,SNPs,significant,kinship = FALSE,fixed_effects = FALSE
       Qt <- t(Q)
       D <- spec.decomp$values
       rm(spec.decomp)
-
+      
       intercept <- matrix(1,nrow = nX,ncol = 1)
       intercept <- Qt%*%intercept
       Y <- Qt%*%Y; Good <- Qt%*%Good
-
+      
       Good <- cbind(intercept,Good)
       oG <- cbind(1,oG)
       beta.good <- RE_BETA(x = Good, y = Y, d = D)
-
+      
       Q <- Q[,-ncol(Q)]
       Qt <- t(Q)
       D <- D[-length(D)]
       uhat <- Q%*%((1/(1 + beta.good[[2]]*D))*Qt)%*%(oY - oG %*% beta.good[[1]])
       resids <- oY - oG %*% beta.good[[1]] - uhat
-
+      
       if(plot_it == TRUE){
         hist(resids,main = "Histogram of Residuals",xlab = "Residuals",breaks = 20)
         return(shapiro.test(resids))
@@ -2100,30 +2100,30 @@ resids_diag <- function(Y,SNPs,significant,kinship = FALSE,fixed_effects = FALSE
     }else{
       #Kinship and principal
       ogprinc <- principal_components
-
+      
       spec.decomp <- eigen(kinship,symmetric = TRUE)
       spec.decomp$values[length(spec.decomp$values)] <- 0
       Q <- spec.decomp$vectors
       Qt <- t(Q)
       D <- diag(spec.decomp$values,nrow = nX,ncol = nX)
       rm(spec.decomp)
-
+      
       intercept <- matrix(1,nrow = nX,ncol = 1)
       intercept <- Qt%*%intercept
       Y <- Qt%*%Y; Good <- Qt%*%Good
       principal_components <- Qt%*%principal_components
-
+      
       Good <- cbind(intercept,Good,principal_components)
       oG <- cbind(1,oG,ogprinc)
-
+      
       beta.good <- RE_BETA(x = Good, y = Y, d = D)
-
+      
       Q <- Q[,-ncol(Q)]
       Qt <- t(Q)
       D <- D[-ncol(D),-ncol(D)]
       uhat <- Q%*%((1/(1 + z*d))*Qt)%*%(oY - oG %*% beta.good[[1]])
       resids <- oY - oG %*% beta.good[[1]] - uhat
-
+      
       if(plot_it == TRUE){
         hist(resids,main = "Histogram of Residuals",xlab = "Residuals",breaks = 20)
         return(shapiro.test(resids))
